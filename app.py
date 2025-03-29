@@ -11,7 +11,8 @@ from scripts.neo4j_queries import *
 # MongoDB interaction in Streamlit
 
 def mongo_test():
-    db = database.connect_mongodb()
+    db_name = "movies"
+    db = database.connect_mongodb(db_name)
 
     # Input form for adding movie details
     with st.form(key="movie_form"):

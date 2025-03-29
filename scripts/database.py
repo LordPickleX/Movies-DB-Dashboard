@@ -2,11 +2,11 @@ from pymongo import MongoClient
 import neo4j
 
 
-def connect_mongodb():
+def connect_mongodb(db_name):
     client = MongoClient("mongodb://localhost:27017/")
 
-    db = client.movies
-    print("Connected to MongoDB")
+    db = client[db_name]
+    print("Connected to MongoDB : ", db_name)
     return db
 
 def connect_neo4j():
