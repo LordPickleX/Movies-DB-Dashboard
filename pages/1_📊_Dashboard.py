@@ -1,11 +1,8 @@
 import streamlit as st
-import time
-import numpy as np
 from matplotlib import pyplot as plt
-
 from scripts import database
 from scripts.mongo_queries import *
-from scripts.neo4j_queries import *
+
 
 def number_of_movies():
     options = []

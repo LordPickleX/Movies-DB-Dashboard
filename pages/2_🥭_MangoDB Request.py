@@ -1,12 +1,8 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-from pymongo import MongoClient
-from bson import ObjectId
-import neo4j
 from scripts import database
 from scripts.mongo_queries import *
-from scripts.neo4j_queries import *
+
 
 def mongo_test():
     db = database.connect_mongodb(db_name="movies")
