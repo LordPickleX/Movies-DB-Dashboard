@@ -10,7 +10,7 @@ from scripts.neo4j_queries import *
 
 def mongo_test():
     db = database.connect_mongodb()
-
+    info_mongo(db)
     # Input form for adding movie details
     with st.form(key="movie_form"):
         id = st.text_input("ID")
@@ -90,23 +90,6 @@ def mongo_test():
         else:
             st.warning(f"Please enter a {search_field} to search.")
 
-    # Display movie count by genre
-    genre_count = db.films.aggregate([
-        {"$unwind": "$genre"},  # Handle multiple genres per movie
-        {"$group": {"_id": "$genre", "count": {"$sum": 1}}}
-    ])
-    genre_data = pd.DataFrame(list(genre_count))
-
-    if not genre_data.empty:
-        st.subheader("Movies by Genre")
-        plt.figure(figsize=(8, 5))
-        plt.bar(genre_data["_id"], genre_data["count"])
-        plt.xlabel("Genre")
-        plt.ylabel("Count")
-        plt.title("Number of Movies by Genre")
-        st.pyplot()
-    else:
-        st.warning("No genre data found!")
 
 if __name__ == "__main__":
     st.title("MangoDB Database Request ")

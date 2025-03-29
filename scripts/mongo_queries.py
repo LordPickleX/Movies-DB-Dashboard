@@ -15,6 +15,7 @@
  }
 
  """
+from re import match
 
 import pandas as pd
 from scipy.stats import pearsonr
@@ -73,6 +74,15 @@ def most_movies_year(db):
         {"$limit": 1}
     ]))
 
+def most_movies_year_range(db, min, max):
+    """Retourne l'année avec le plus grand nombre de films"""
+    return list(db.films.aggregate([
+        {"$match": {"year": {"$gte": int(min), "$lte": int(max)}}},
+        {"$group": {"_id": "$year", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 1}
+    ]))
+
 
 def count_movies_after_1999(db):
     """Retourne le nombre de films sortis après 1999"""
@@ -86,12 +96,50 @@ def avg_votes_2007(db):
         {"$group": {"_id": None, "avg_votes": {"$avg": "$Votes"}}}
     ]))
 
+def avg_votes_2007_range(db, min, max):
+    """Retourne la moyenne des votes des films de 2007"""
+    return list(db.films.aggregate([
+        {"$match": {"year": {"$gte": int(min), "$lte": int(max)}}},
+        {"$group": {"_id": None, "avg_votes": {"$avg": "$Votes"}}}
+    ]))
+
+def avg_score_2007_range(db, min, max):
+    """Retourne la moyenne des votes des films de 2007"""
+    return list(db.films.aggregate([
+        {"$match": {"year": {"$gte": int(min), "$lte": int(max)}}},
+        {"$group": {"_id": None, "avg_score": {"$avg": "$Metascore"}}}
+    ]))
 
 def movies_per_year(db):
     """Retourne un dictionnaire du nombre de films par année"""
     return list(db.films.aggregate([
         {"$group": {"_id": "$year", "count": {"$sum": 1}}},
         {"$sort": {"_id": 1}}
+    ]))
+
+def movies_per_year_range(db, min, max):
+    """Retourne un dictionnaire du nombre de films par année"""
+
+    return list(db.films.aggregate([
+        {
+            '$match': {
+                'year': {
+                    '$gte': int(min),
+                    '$lte': int(max)
+                }
+            }
+        }, {
+            '$group': {
+                '_id': '$year',
+                'count': {
+                    '$sum': 1
+                }
+            }
+        }, {
+            '$sort': {
+                '_id': 1
+            }
+        }
     ]))
 
 

@@ -9,3 +9,6 @@ pyvis
 #jpype
 #asposecells
 #asposecells
+scipy
+pandas
+numpy

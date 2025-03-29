@@ -7,6 +7,7 @@ import neo4j
 from scripts import database
 from scripts.mongo_queries import *
 from scripts.neo4j_queries import *
+import numpy as np
 
 # MongoDB interaction in Streamlit
 
@@ -102,12 +103,13 @@ def mongo_test():
 
     if not genre_data.empty:
         st.subheader("Movies by Genre")
-        plt.figure(figsize=(8, 5))
-        plt.bar(genre_data["_id"], genre_data["count"])
-        plt.xlabel("Genre")
-        plt.ylabel("Count")
-        plt.title("Number of Movies by Genre")
-        st.pyplot()
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.bar(genre_data["_id"], genre_data["count"])
+        ax.set_xlabel("Genre")
+        ax.set_ylabel("Count")
+        ax.set_title("Number of Movies by Genre")
+        ax.set_xticklabels(genre_data["_id"], rotation=90)
+        st.pyplot(fig)
     else:
         st.warning("No genre data found!")
     # Menu déroulant pour choisir une requête
@@ -151,7 +153,14 @@ def mongo_test():
 
     elif query_choice == "Available movie genres":
         result = distinct_genres(db)
-        st.write("Genres available:", ", ".join(result))
+        genres = []
+        #print(result)
+        for i in result:
+            for j in i.split(','):
+                genres.append(j)
+        #print(genres)
+        genres = np.unique(genres)
+        st.write("Genres available:", ", ".join(genres))
 
     elif query_choice == "Highest revenue movie":
         result = highest_revenue_movie(db)[0]
@@ -178,6 +187,8 @@ def mongo_test():
 
     elif query_choice == "Longest movie per genre":
         result = longest_movie_by_genre(db)
+        result = result.split(',')
+        result = np.unique(result)
         st.table(pd.DataFrame(result))
 
     elif query_choice == "View: Movies with Metascore > 80 and Revenue > 50M":
@@ -222,6 +233,6 @@ def init():
 # Run Streamlit application
 if __name__ == "__main__":
     st.title("Movie Database Admin Dashboard")
-    #mongo_test()
+    mongo_test()
     init()
 

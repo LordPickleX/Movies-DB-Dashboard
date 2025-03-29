@@ -4,7 +4,9 @@ import neo4j
 
 def connect_mongodb(db_name):
     client = MongoClient("mongodb://localhost:27017/")
-
+    database_name = "project"
+    collection_name = "movies"
+    #db = client.movies
     db = client[db_name]
     print("Connected to MongoDB : ", db_name)
     return db
