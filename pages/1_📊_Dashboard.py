@@ -19,7 +19,7 @@ def number_of_movies():
         value=("1970", "2025"),
     )
     st.write("You selected wavelengths between", start_year, "and", end_year)
-    db = database.connect_mongodb()
+    db = database.connect_mongodb(db_name="movies")
 
 
     fig, ax = plt.subplots()

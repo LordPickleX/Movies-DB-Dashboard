@@ -4,6 +4,7 @@ pymongo
 neo4j
 matplotlib
 seaborn
+panda
 # neovis ( utilisé en java )
 pyvis
 #jpype

@@ -9,7 +9,7 @@ from scripts.mongo_queries import *
 from scripts.neo4j_queries import *
 
 def mongo_test():
-    db = database.connect_mongodb()
+    db = database.connect_mongodb(db_name="movies")
     info_mongo(db)
     # Input form for adding movie details
     with st.form(key="movie_form"):
