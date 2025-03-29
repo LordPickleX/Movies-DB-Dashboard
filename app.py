@@ -187,9 +187,10 @@ def mongo_test():
 
     elif query_choice == "Longest movie per genre":
         result = longest_movie_by_genre(db)
-        result = result.split(',')
-        result = np.unique(result)
-        st.table(pd.DataFrame(result))
+        df = pd.DataFrame(result)
+        df.rename(columns={"_id": "Genre", "longest_film": "Title", "Runtime (Minutes)": "Duration"}, inplace=True)
+        st.table(df)
+
 
     elif query_choice == "View: Movies with Metascore > 80 and Revenue > 50M":
         create_high_rated_profitable_movies_view(db)

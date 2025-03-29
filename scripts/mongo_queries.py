@@ -17,6 +17,7 @@
  """
 from re import match
 
+import numpy as np
 import pandas as pd
 from scipy.stats import pearsonr
 
@@ -172,7 +173,6 @@ def directors_with_more_than_5_movies(db):
 def most_profitable_genre(db):
     """Retourne le genre de film avec le plus haut revenu moyen"""
 
-
     return list(db.films.aggregate([
         {"$unwind": "$genre"},
         {"$group": {"_id": "$genre", "avg_revenue": {"$avg": "$Revenue (Millions)"}}},
@@ -193,13 +193,43 @@ def top_movies_by_decade(db):
 
 
 def longest_movie_by_genre(db):
-    """Retourne le film le plus long par genre"""
+    # Retourne le film le plus long par genre
     return list(db.films.aggregate([
         {"$unwind": "$genre"},
         {"$sort": {"Runtime": -1}},
         {"$group": {"_id": "$genre", "longest_film": {"$first": "$title"}, "Runtime (Minutes)": {"$first": "$Runtime (Minutes)"}}}
     ]))
+"""
 
+
+def longest_movie_by_genre(db):
+    # Retourne le film le plus long par genre (en séparant correctement les genres)
+    # Extraire tous les genres en les séparant
+    genre_list = []
+    for doc in db.films.find({}, {"genre": 1}):  # Récupère juste le champ "genre"
+        if "genre" in doc and isinstance(doc["genre"], str):  # Vérifie si c'est une chaîne
+            for g in doc["genre"].split(","):  # Séparation manuelle
+                genre_list.append(g.strip())  # Nettoyage des espaces
+
+    # Unicité des genres
+    genres = np.unique(genre_list)
+
+    # Trouver le film le plus long pour chaque genre
+    longest_movies = []
+    for genre in genres:
+        film = db.films.find_one(
+            {"genre": {"$regex": f"\\b{genre}\\b", "$options": "i"}},  # Recherche insensible à la casse
+            sort=[("Runtime", -1)]  # Trie par durée décroissante
+        )
+        if film:
+            longest_movies.append({
+                "Genre": genre,
+                "Film": film["title"],
+                "Runtime (Minutes)": film["Runtime"]
+            })
+
+    return longest_movies
+"""
 
 def create_high_rated_profitable_movies_view(db):
     """Crée une vue des films avec un Metascore > 80 et un revenu > 50M"""
