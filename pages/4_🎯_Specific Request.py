@@ -1,15 +1,25 @@
 import streamlit as st
-import pandas as pd
 import matplotlib.pyplot as plt
 from pymongo import MongoClient
-from bson import ObjectId
-import neo4j
 from scripts import database
 from scripts.mongo_queries import *
-from scripts.neo4j_queries import *
 import numpy as np
 
 global selected_question
+global db
+global fichier
+
+# Une fois le dataset choisi, tu vas récupérer les collections disponibles
+def get_collections(db_name):
+    client = MongoClient("mongodb://localhost:27017/")
+    db = client[db_name]
+    return db.list_collection_names()
+
+# Afficher les données de la collection sélectionnée
+def display_collection_data(collection):
+    data = pd.DataFrame(list(collection.find()))  # Récupérer toutes les données de la collection
+    st.write(data)
+
 
 def init():
     with st.sidebar:
@@ -32,8 +42,6 @@ def init():
         "Evolution of average movie duration per decade"
     ]
 
-
-
         for i in range(1,14):
             api_options.append(str(i)+") "+questions[i-1])
         #api_options = ("Question 1", "Question 2")
@@ -43,10 +51,32 @@ def init():
             options=api_options,
         )
 
+
+
+        # Liste des bases de données disponibles
+        db_list = ["movies", "your_other_datasets"]  # Ajoute les autres datasets ici
+        # Sélectionner la base de données
+        db_name = st.selectbox("Choose Database", db_list)
+
+        # Sélectionner la collection selon la base choisie
+        collection_list = get_collections(db_name)
+        global fichier
+        fichier = st.selectbox("Choose Collection", collection_list)
+
+        # Connexion à la base et la collection sélectionnée
+        global db
+        db = database.connect_mongodb_db(db_name)
+
+
+
+
+
+
 def specific_request():
 
-    db_name = "movies"
-    db = database.connect_mongodb(db_name)
+    #db_name = "movies"
+    #fichier = "films"
+    #db = database.connect_mongodb(db_name, fichier)
     # Menu déroulant pour choisir une requête
 
 
@@ -60,19 +90,19 @@ def specific_request():
     st.subheader(query_choice, divider=True)
 
     if query_choice == "Year with most movie releases":
-        result = most_movies_year(db)
+        result = most_movies_year(db, fichier)
         st.write(f"Year with the most releases: **{result[0]['_id']}** ({result[0]['count']} movies)")
 
     elif query_choice == "Number of movies after 1999":
-        result = count_movies_after_1999(db)
+        result = count_movies_after_1999(db, fichier)
         st.write(f"Movies released after 1999: **{result}**")
 
     elif query_choice == "Average votes for movies in 2007":
-        result = avg_votes_2007(db)
+        result = avg_votes_2007(db, fichier)
         st.write(f"Average votes for movies in 2007: **{result[0]['avg_votes']:.2f}**")
 
     elif query_choice == "Movies per year (Histogram)":
-        data = pd.DataFrame(movies_per_year(db))
+        data = pd.DataFrame(movies_per_year(db,fichier))
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(data["_id"], data["count"])
         ax.set_xlabel("Year")
@@ -82,7 +112,7 @@ def specific_request():
         st.pyplot(fig)
 
     elif query_choice == "Available movie genres":
-        result = distinct_genres(db)
+        result = distinct_genres(db, fichier)
         genres = []
         #print(result)
         for i in result:
@@ -93,20 +123,20 @@ def specific_request():
         st.write("Genres available:", ", ".join(genres))
 
     elif query_choice == "Highest revenue movie":
-        result = highest_revenue_movie(db)[0]
+        result = highest_revenue_movie(db,fichier)[0]
         print(result)
         st.write(f"Highest revenue movie: **{result['title']}** (${result['Revenue (Millions)']}M)")
 
     elif query_choice == "Directors with more than 5 movies":
-        result = directors_with_more_than_5_movies(db)
+        result = directors_with_more_than_5_movies(db, fichier)
         st.table(pd.DataFrame(result))
 
     elif query_choice == "Highest revenue genre (on average)":
-        result = most_profitable_genre(db)[0]
+        result = most_profitable_genre(db,fichier)[0]
         st.write(f"Highest earning genre on average: **{result['_id']}** (${result['avg_revenue']:.2f}M)")
 
     elif query_choice == "Top 3 rated movies per decade":
-        result = top_movies_by_decade(db)
+        result = top_movies_by_decade(db, fichier)
         for item in result:
             st.write(f"**{item['decade']}s**:")
             for movie in item['top_movies']:
@@ -115,10 +145,9 @@ def specific_request():
                     st.write(f"- {movie['title']} ({movie['rating']}/10)")
 
 
-
     elif query_choice == "Longest movie per genre":
 
-        result = distinct_genres(db)
+        result = distinct_genres(db, fichier)
 
         genres = []
 
@@ -133,7 +162,7 @@ def specific_request():
 
         genres = np.unique(genres)
 
-        result = longest_movie_by_genre(db)
+        result = longest_movie_by_genre(db, fichier)
 
         genres_dict = {}
 
@@ -184,7 +213,7 @@ def specific_request():
 
 
     elif query_choice == "View: Movies with Metascore > 80 and Revenue > 50M":
-        result = movies_metascore_revenue(db, 80, 50)
+        result = movies_metascore_revenue(db, 80, 50,fichier)
         #print(result)
         #st.write(result)
         #st.write("View created for high-rated movies!")
@@ -192,12 +221,17 @@ def specific_request():
         df.drop("_id", axis=1, inplace=True)
         st.table(df)
 
+
+    elif query_choice == "View: Movies with Metascore > 80 and Revenue > 50M":
+        create_high_rated_profitable_movies_view(db, fichier)
+        st.write("View created for high-rated movies!")
+
     elif query_choice == "Correlation: Runtime vs Revenue":
-        correlation = correlation_runtime_revenue(db)
+        correlation = correlation_runtime_revenue(db, fichier)
         st.write(f"Correlation coefficient (Runtime vs Revenue): **{correlation:.2f}**")
 
     elif query_choice == "Evolution of average movie duration per decade":
-        data = pd.DataFrame(avg_runtime_by_decade(db))
+        data = pd.DataFrame(avg_runtime_by_decade(db, fichier))
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.plot(data["_id"], data["avg_runtime"], marker="o")
         #ax.set_xlabel("Decade")

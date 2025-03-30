@@ -14,7 +14,7 @@ import numpy as np
 def mongo_test():
 
     db_name = "movies"
-    db = database.connect_mongodb(db_name)
+    db = database.connect_mongodb_db(db_name)
     if db is None:
         st.subheader("Unable to connect to MangoDB database", divider="red")
     else:

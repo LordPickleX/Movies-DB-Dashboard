@@ -1,15 +1,15 @@
 from pymongo import MongoClient
 import neo4j
+import pandas as pd
 
+from pymongo import MongoClient
 
-def connect_mongodb(db_name):
+def connect_mongodb_db(db_name):
+    # Connexion à MongoDB
     client = MongoClient("mongodb://localhost:27017/")
-    database_name = "project"
-    collection_name = "movies"
-    #db = client.movies
-    db = client[db_name]
+    db = client[db_name]  # Connexion à la base de données
     print("Connected to MongoDB : ", db_name)
-    return db
+    return db  # Retourner l'objet MongoDB, pas le DataFrame ici
 
 def connect_neo4j():
     URI = "neo4j+s://657cbcf3.databases.neo4j.io"

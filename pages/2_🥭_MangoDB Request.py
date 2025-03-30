@@ -1,15 +1,42 @@
 import streamlit as st
-import pandas as pd
 from scripts import database
 from scripts.mongo_queries import *
+from pymongo import MongoClient
 
+with st.sidebar:
+    # Liste des bases de données disponibles
+    db_list = ["movies", "your_other_datasets"]  # Ajoute les autres datasets ici
 
-db_name = "movies"
+    # Sélectionner la base de données
+    db_name = st.selectbox("Choose Database", db_list)
+
+    # Une fois le dataset choisi, tu vas récupérer les collections disponibles
+    def get_collections(db_name):
+        client = MongoClient("mongodb://localhost:27017/")
+        db = client[db_name]
+        return db.list_collection_names()
+
+    # Sélectionner la collection selon la base choisie
+    collection_list = get_collections(db_name)
+    fichier = st.selectbox("Choose Collection", collection_list)
+
+    # Connexion à la base et la collection sélectionnée
+    collection = database.connect_mongodb_db(db_name)
+
+# Afficher les données de la collection sélectionnée
+def display_collection_data(collection):
+    data = pd.DataFrame(list(collection.find()))  # Récupérer toutes les données de la collection
+    st.write(data)
 
 
 def mongo_test():
-    db = database.connect_mongodb(db_name)
+    db = database.connect_mongodb_db(db_name)
     info_mongo(db)
+
+    st.subheader(f"Displaying Data from {fichier} Collection")
+    display_collection_data(db[fichier])
+
+
     # Input form for adding movie details
     with st.form(key="movie_form"):
         id = st.text_input("ID")
@@ -42,7 +69,7 @@ def mongo_test():
                 "Revenue (Millions)": revenue,
                 "Metascore": metascore,
             }
-            insert_movie(db, film)
+            insert_movie(db,fichier ,film)
             st.success("Movie added successfully!")
 
     # Display current movies
@@ -55,11 +82,11 @@ def mongo_test():
     if st.button("Delete Movie"):
         if delete_value:
             if delete_field == "ID":
-                delete_movie(db, delete_field,delete_value)  # Assuming ID field
+                delete_movie(db, delete_field,delete_value,fichier)  # Assuming ID field
             elif delete_field == "Title":
-                delete_movie(db, delete_field,delete_value)  # Assuming Title field
+                delete_movie(db, delete_field,delete_value,fichier)  # Assuming Title field
             elif delete_field == "Genre":
-                delete_movie(db, delete_field,delete_value)  # Assuming Genre field
+                delete_movie(db, delete_field,delete_value,fichier)  # Assuming Genre field
             st.success(f"Movie with {delete_field}: '{delete_value}' deleted successfully!")
         else:
             st.warning(f"Please enter a {delete_field} to delete.")
@@ -70,11 +97,11 @@ def mongo_test():
     if st.button("Search Movie"):
         if search_value:
             if search_field == "ID":
-                movies = find_movies(db, "_id", search_value)  # Searching by ID
+                movies = find_movies(db, "_id", search_value, fichier)  # Searching by ID
             elif search_field == "Title":
-                movies = find_movies(db, "title", search_value)  # Searching by Title
+                movies = find_movies(db, "title", search_value, fichier)  # Searching by Title
             elif search_field == "Genre":
-                movies = find_movies(db, "genre", search_value)  # Searching by Genre
+                movies = find_movies(db, "genre", search_value, fichier)  # Searching by Genre
             if movies:
                 st.write(f"Found {len(movies)} movie(s) matching '{search_value}':")
                 for movie in movies:
