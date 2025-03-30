@@ -7,7 +7,7 @@ WORKDIR /app
 # Copie des fichiers dans le conteneur
 COPY requirements.txt requirements.txt
 COPY main.py main.py
-# COPY data.json data.json
+COPY movies.json data.json
 
 # Installation des dépendances
 RUN pip install --no-cache-dir -r requirements.txt

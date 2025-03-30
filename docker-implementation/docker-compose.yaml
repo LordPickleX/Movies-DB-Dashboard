@@ -6,6 +6,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: test
+    networks:
+      - my_network
     ports:
       - "27017:27017"
     volumes:
@@ -23,9 +25,13 @@ services:
     restart: always
     environment:
       NEO4J_AUTH: neo4j/password
+    networks:
+      - my_network
     ports:
       - "7474:7474"
       - "7687:7687"
+    volumes:
+      - ./app:/var/lib/neo4j/import  # Monter le répertoire app dans le répertoire d'importation de Neo4j
     healthcheck:
       test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "password", "MATCH (n) RETURN count(n);"]
       interval: 10s
@@ -48,9 +54,16 @@ services:
       MONGO_PASSWORD: test
       NEO4J_USER: neo4j
       NEO4J_PASSWORD: password
+    networks:
+      - my_network
     volumes:
       - ./app:/app
     command: ["python", "main.py"]
+
+
+networks:
+  my_network:
+    driver: bridge
 
 volumes:
   mongo_data:
