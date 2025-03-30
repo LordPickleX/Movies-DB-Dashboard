@@ -53,7 +53,8 @@ def specific_request():
     if selected_question == "None":
         st.write("Please select a request on left sidebar")
         return
-    query_choice = selected_question[3:]
+    #query_choice = selected_question[3:]
+    query_choice = selected_question.split(") ", 1)[1]
     # Exécuter la requête sélectionnée
 
     st.subheader(query_choice, divider=True)
@@ -114,16 +115,82 @@ def specific_request():
                     st.write(f"- {movie['title']} ({movie['rating']}/10)")
 
 
+
     elif query_choice == "Longest movie per genre":
+
+        result = distinct_genres(db)
+
+        genres = []
+
+        # print(result)
+
+        for i in result:
+
+            for j in i.split(','):
+                genres.append(j)
+
+        # print(genres)
+
+        genres = np.unique(genres)
+
         result = longest_movie_by_genre(db)
-        df = pd.DataFrame(result)
-        df.rename(columns={"_id": "Genre", "longest_film": "Title", "Runtime (Minutes)": "Duration"}, inplace=True)
+
+        genres_dict = {}
+
+        genres_dict2 = {}
+
+        for genre in genres:
+            genres_dict[str(genre)] = 0
+
+            genres_dict2[str(genre)] = None
+
+        print(result)
+
+        for movie in result:
+
+            for genre in movie.get("_id").split(','):
+
+                if genres_dict.get(str(genre)) < movie.get("Runtime (Minutes)"):
+                    genres_dict[str(genre)] = movie.get("Runtime (Minutes)")
+
+                    genres_dict2[str(genre)] = movie.get("longest_film")
+
+                # print(genre)
+
+        print(genres_dict)
+
+        # unite dicts
+
+        array = []
+
+        for i, key in enumerate(genres_dict.keys()):
+            array.append({})
+
+            array[i]["id"] = key
+
+            array[i]["title"] = genres_dict2.get(key)
+
+            array[i]["duration"] = genres_dict.get(key)
+
+        df = pd.DataFrame(array)
+
+        # df = pd.DataFrame.from_dict(genres_dict, orient='index')
+
+        # df.rename(columns={"_id": "Genre", "longest_film": "Title", "Runtime (Minutes)": "Duration"}, inplace=True)
+
+        df.rename(columns={"id": "Genre", "title": "Title", "duration": "Duration"}, inplace=True)
+
         st.table(df)
 
 
     elif query_choice == "View: Movies with Metascore > 80 and Revenue > 50M":
-        create_high_rated_profitable_movies_view(db)
-        st.write("View created for high-rated movies!")
+        result = movies_metascore_revenue(db, 80, 50)
+        #print(result)
+        #st.write(result)
+        #st.write("View created for high-rated movies!")
+        df = pd.DataFrame(result)
+        df.drop("_id", axis=1, inplace=True)
+        st.table(df)
 
     elif query_choice == "Correlation: Runtime vs Revenue":
         correlation = correlation_runtime_revenue(db)
@@ -131,12 +198,16 @@ def specific_request():
 
     elif query_choice == "Evolution of average movie duration per decade":
         data = pd.DataFrame(avg_runtime_by_decade(db))
-        plt.figure(figsize=(10, 5))
-        plt.plot(data["_id"], data["avg_runtime"], marker="o")
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(data["_id"], data["avg_runtime"], marker="o")
+        #ax.set_xlabel("Decade")
+        #ax.set_ylabel("Movie Duration (min)")
+        #ax.set_title("Average Movie Duration per Decade")
+        #plt.plot(data["_id"], data["avg_runtime"], marker="o")
         plt.xlabel("Decade")
         plt.ylabel("Average Runtime (min)")
         plt.title("Average Movie Duration per Decade")
-        st.pyplot()
+        st.pyplot(fig)
 
 
 if __name__ == "__main__":

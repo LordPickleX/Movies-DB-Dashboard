@@ -82,7 +82,7 @@ mongod
 Lancez l’application Streamlit :
 
 ```bash
-streamlit run app.py
+streamlit run ✨_Welcome.py
 ```
 
 Accédez à l’application via votre navigateur à l’adresse http://localhost:8501.
@@ -116,7 +116,7 @@ Structure du projet
 │   ├── database.py  # Fonctions pour la connexion à MongoDB et Neo4j  
 │   ├── mongo_queries.py  # Requêtes MongoDB  
 │   ├── neo4j_queries.py  # Requêtes Neo4j  
-│── app.py  # Application Streamlit principale  
+│── ✨_Welcome.py  # Application Streamlit principale  
 │── config.py  # Variables de configuration  
 │── requirements.txt  # Dépendances du projet  
 │── README.md  # Documentation du projet  

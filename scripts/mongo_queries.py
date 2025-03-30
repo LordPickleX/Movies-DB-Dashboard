@@ -264,9 +264,31 @@ def create_high_rated_profitable_movies_view(db):
     db.create_view("high_rated_profitable_movies", "films", [
         {"$match": {"Metascore": {"$gt": 80}, "Revenue (Millions)": {"$gt": 50}}}
     ])"""
-    db.command("create", "high_rated_profitable_movies",
+    return db.command("create", "high_rated_profitable_movies",
                viewOn="films",
                pipeline=[{"$match": {"Metascore": {"$gt": 80}, "Revenue (Millions)": {"$gt": 50}}}])
+
+
+def movies_metascore_revenue(db, min_score, min_revenue):
+    return list(db.films.aggregate([
+    {
+        '$match': {
+            'Metascore': {
+                '$gte': int(min_score),
+            },
+            'Revenue (Millions)': {
+                '$gte': int(min_revenue)
+            }
+        }
+    }, {
+        '$project': {
+            'Movie': '$title',
+            'MetaScore': '$Metascore',
+            'Revenue (M)': '$Revenue (Millions)'
+        }
+    }
+]))
+
 
 
 def correlation_runtime_revenue(db):
