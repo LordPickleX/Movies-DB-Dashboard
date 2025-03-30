@@ -12,9 +12,10 @@ import numpy as np
 # MongoDB interaction in Streamlit
 
 def mongo_test():
+
     db_name = "movies"
     db = database.connect_mongodb(db_name)
-
+    """
     # Input form for adding movie details
     with st.form(key="movie_form"):
         id = st.text_input("ID")
@@ -112,6 +113,7 @@ def mongo_test():
         st.pyplot(fig)
     else:
         st.warning("No genre data found!")
+    """
     # Menu déroulant pour choisir une requête
     query_choice: object = st.selectbox("Choose a query:", [
         "Year with most movie releases",
@@ -218,17 +220,7 @@ def neo4j_test():
 
 
 
-def init():
-    with st.sidebar:
-        st.header("Specific Selection")
-        api_options = ["None"]
-        for i in range(1,31):
-            api_options.append("Question " + str(i))
-        #api_options = ("Question 1", "Question 2")
-        selected_api = st.selectbox(
-            label="Choose a specific question:",
-            options=api_options,
-        )
+
 
 
 # Run Streamlit application

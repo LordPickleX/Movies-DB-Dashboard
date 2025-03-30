@@ -4,6 +4,8 @@ from scripts import database
 from scripts.mongo_queries import *
 
 
+db_name = "movies"
+
 def number_of_movies():
     options = []
     for i in range(1970, 2026):
@@ -16,7 +18,7 @@ def number_of_movies():
         value=("1970", "2025"),
     )
     st.write("You selected wavelengths between", start_year, "and", end_year)
-    db = database.connect_mongodb(db_name="movies")
+    db = database.connect_mongodb(db_name)
 
 
     fig, ax = plt.subplots()
@@ -48,6 +50,11 @@ def number_of_movies():
     result = avg_score_2007_range(db, start_year, end_year)
     st.write("Average Metascore for movies from", start_year, " to ", end_year, f": **{result[0]['avg_score']:.2f}**")
 
+    # Quel est le film qui a généré le plus de revenu.
+
+    result = highest_revenue_movie_range(db, start_year, end_year)[0]
+    print(result)
+    st.write(f"Highest revenue movie: **{result['title']}** (${result['Revenue (Millions)']}M)")
 
 
 

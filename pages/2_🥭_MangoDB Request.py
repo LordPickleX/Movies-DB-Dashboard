@@ -4,8 +4,11 @@ from scripts import database
 from scripts.mongo_queries import *
 
 
+db_name = "movies"
+
+
 def mongo_test():
-    db = database.connect_mongodb(db_name="movies")
+    db = database.connect_mongodb(db_name)
     info_mongo(db)
     # Input form for adding movie details
     with st.form(key="movie_form"):

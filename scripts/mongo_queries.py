@@ -43,6 +43,7 @@ def update_movie(db, search_field, search_value, update_values):
     db.films.update_one({search_field: search_value}, {"$set": update_values})
 
 
+
 def find_movies(db, field, value):
     """Recherche des films en fonction d'un champ spécifique"""
     return list(db.films.find({field: {'$regex': value, '$options': 'i'}}))
@@ -158,6 +159,28 @@ def highest_revenue_movie(db):
         {"Revenue (Millions)": {"$ne": ""}},  # Exclut les valeurs vides
         {"title": 1, "Revenue (Millions)": 1}
     ).sort("Revenue (Millions)", -1).limit(1))
+
+def highest_revenue_movie_range(db, min, max):
+    """Retourne le film ayant généré le plus de revenus"""
+    return list(db.films.aggregate([
+    {
+        '$match': {
+            'Revenue (Millions)': {
+                '$ne': ''
+            },
+            'year': {
+                '$lte': int(max),
+                '$gte': int(min)
+            }
+        }
+    }, {
+        '$sort': {
+            'Revenue (Millions)': -1
+        }
+    }, {
+        '$limit': 1
+    }
+]))
 
 def directors_with_more_than_5_movies(db):
     """Retourne les réalisateurs ayant réalisé plus de 5 films"""
