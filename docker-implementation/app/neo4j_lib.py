@@ -13,6 +13,12 @@ def clean_neo4j(session):
     # Supprimer tous les nœuds
     session.run("MATCH (n) DELETE n")
     print("Tous les nœuds ont été supprimés.")
+    
+def execute_neo4j_query(driver, query):
+    """Exécute une requête Cypher sur Neo4j"""
+    with driver.session() as session:
+        result = session.run(query, {})
+        return [record.data() for record in result]
 
 def create_film_node(tx, film):
     """ Créer un noeud Film dans Neo4j """
