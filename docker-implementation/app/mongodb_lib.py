@@ -17,7 +17,6 @@ def import_json(db, collection_name, json_file):
     """Importer un fichier JSON dans une collection MongoDB en gérant les erreurs de format"""
     try:
         collection = db[collection_name]
-        # clean_mongodb(collection)
         with open(json_file, 'r', encoding='utf-8') as file:
             first_char = file.read(1)
             file.seek(0)  # Revenir au début du fichier

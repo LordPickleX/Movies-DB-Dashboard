@@ -1,2 +1,14 @@
+streamlit
+watchdog
 pymongo
 neo4j
+matplotlib
+seaborn
+pandas
+# neovis ( utilisé en java )
+pyvis
+#jpype
+#asposecells
+#asposecells
+scipy
+numpy

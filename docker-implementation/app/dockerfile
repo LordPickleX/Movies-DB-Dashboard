@@ -6,11 +6,13 @@ WORKDIR /app
 
 # Copie des fichiers dans le conteneur
 COPY requirements.txt requirements.txt
-COPY main.py main.py
-COPY movies.json data.json
+COPY ✨_Welcome.py ✨_Welcome.py
+COPY data/movies.json data.json
+COPY data/movies.films.csv data.csv
 
 # Installation des dépendances
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Commande exécutée au démarrage du conteneur
-CMD ["python", "main.py"]
+# CMD ["python", "main.py"]
+CMD ["streamlit", "run", "✨_Welcome.py"]
