@@ -1,0 +1,16 @@
+# Utilisation d'une image Python officielle
+FROM python:3.9-slim
+
+# Définition du répertoire de travail
+WORKDIR /app
+
+# Copie des fichiers dans le conteneur
+COPY requirements.txt requirements.txt
+COPY main.py main.py
+COPY movies.json data.json
+
+# Installation des dépendances
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Commande exécutée au démarrage du conteneur
+CMD ["python", "main.py"]
