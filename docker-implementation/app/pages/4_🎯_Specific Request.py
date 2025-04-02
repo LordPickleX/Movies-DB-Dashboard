@@ -1,13 +1,26 @@
 import streamlit as st
 import matplotlib.pyplot as plt
+import neo4j
 from pymongo import MongoClient
 from scripts import database
 from scripts.mongo_queries import *
+from scripts.neo4j_queries import *
 import numpy as np
+import random
 
 global selected_question
 global db
 global fichier
+
+def connect_neo4j():
+    URI = "bolt://neo4j:7687"
+    AUTH = ("neo4j", "password")
+    print("Connecting to Neo4j")
+
+    with neo4j.GraphDatabase.driver(URI, auth=AUTH) as driver:
+        driver.verify_connectivity()
+        print("Successfully connected to Neo4j")
+        return driver
 
 # Une fois le dataset choisi, tu vas récupérer les collections disponibles
 def get_collections(db_name):
@@ -19,6 +32,38 @@ def get_collections(db_name):
 def display_collection_data(collection):
     data = pd.DataFrame(list(collection.find()))  # Récupérer toutes les données de la collection
     st.write(data)
+
+def get_random_actor(session):
+    # Récupérer tous les acteurs dans la base de données Neo4j
+    query = """
+    MATCH (a:Actor)
+    RETURN a.name AS actor_name
+    """
+    result = session.run(query).data()
+    
+    # Sélectionner un acteur aléatoire
+    actor_names = [record['actor_name'] for record in result]
+    random_actor = random.choice(actor_names)
+    
+    return random_actor
+
+def analyse_collaboration(collaborations):
+    """Analyse les collaborations pour déterminer leur succès commercial et critique."""
+    # Analyse pour déterminer s'il y a succès commercial ou critique
+    for analysis in collaborations:
+        if analysis["MoyenneRevenu"] > 500:  # Un seuil arbitraire pour un "grand succès commercial"
+            analysis["Succès Commercial"] = "Oui"
+        else:
+            analysis["Succès Commercial"] = "Non"
+        
+        if analysis["MoyenneMetascore"] >= 70:  # Un seuil arbitraire pour un "bon score critique"
+            analysis["Succès Critique"] = "Oui"
+        else:
+            analysis["Succès Critique"] = "Non"
+    
+    return collaborations
+
+
 
 
 def init():
@@ -39,10 +84,27 @@ def init():
         "Longest movie per genre",
         "View: Movies with Metascore > 80 and Revenue > 50M",
         "Correlation: Runtime vs Revenue",
-        "Evolution of average movie duration per decade"
+        "Evolution of average movie duration per decade",
+        "Actor with most movie appearances",
+        "Actors who have starred in movies with Anne Hathaway",
+        "Actor with highest total movie revenue",
+        "Average movie votes",
+        "Most represented movie genre",
+        "Movies featuring actors you've worked with",
+        "Director with most unique actors",
+        "Most connected movies (shared actors)",
+        "Top 5 actors with most different directors",
+        "Movie recommendation based on actor's past genres",
+        "Director influence network based on genre similarities",
+        "Shortest path between two actors",
+        "Actor community detection (Louvain algorithm)",
+        "Movies with common genres but different directors",
+        "Movie recommendations based on actor's preferences",
+        "Director competition based on films released in the same year",
+        "Frequent collaborations between directors and actors, and their success"
     ]
 
-        for i in range(1,14):
+        for i in range(1,31):
             api_options.append(str(i)+") "+questions[i-1])
         #api_options = ("Question 1", "Question 2")
         global selected_question
@@ -66,6 +128,18 @@ def init():
         # Connexion à la base et la collection sélectionnée
         global db
         db = database.connect_mongodb_db(db_name)
+        
+        neo4j_driver=connect_neo4j()
+        with neo4j_driver.session() as session:
+            clean_neo4j(session)
+        
+        # Stocker la session Neo4j dans `st.session_state`
+        st.session_state.neo4j_session = neo4j_driver.session()
+            
+        # Charger les données CSV dans Neo4j
+        load_csv_data(neo4j_driver, "data/movies.films.csv")
+
+        print("Importation des données terminée.")
 
 
 
@@ -88,6 +162,8 @@ def specific_request():
     # Exécuter la requête sélectionnée
 
     st.subheader(query_choice, divider=True)
+    
+    neo4j_session = st.session_state.neo4j_session
 
     if query_choice == "Year with most movie releases":
         result = most_movies_year(db, fichier)
@@ -242,6 +318,111 @@ def specific_request():
         plt.ylabel("Average Runtime (min)")
         plt.title("Average Movie Duration per Decade")
         st.pyplot(fig)
+        
+    elif query_choice == "Actor with most movie appearances":
+        result = actor_with_most_movies(neo4j_session)
+        st.write(f"Actor with most appearances: **{result[0]['actor']}** ({result[0]['movie_count']} movies)")
+
+    elif query_choice == "Actors who have starred in movies with Anne Hathaway":
+        result = actors_with_anne_hathaway(neo4j_session)
+        actors_list = [actor['actor'] for actor in result]
+        st.write("Actors who starred with Anne Hathaway:", ", ".join(actors_list))
+
+    elif query_choice == "Actor with highest total movie revenue":
+        result = actor_with_highest_revenue(neo4j_session)
+        st.write(f"Actor with highest total revenue: **{result[0]['actor']}** (${result[0]['total_revenue']}M)")
+
+    elif query_choice == "Average movie votes":
+        result = average_movie_votes(neo4j_session)
+        st.write(f"Average movie votes: **{result[0]['avg_votes']:.2f}**")
+
+    elif query_choice == "Most represented movie genre":
+        result = most_represented_genre(neo4j_session)
+        st.write(f"Genre le plus représenté : {result[0]['genre']} ({result[0]['count']} films)")
+# vérifier l'affichage
+    elif query_choice == "Movies featuring actors you've worked with":
+        random_actor = get_random_actor(neo4j_session)
+        result = movies_with_my_colleagues(neo4j_session, random_actor)
+        movie_list = [movie['title'] for movie in result]
+        st.write(f"Movies featuring actors you've worked with {random_actor} :", ", ".join(movie_list))
+
+    elif query_choice == "Director with most unique actors":
+        result = director_with_most_unique_actors(neo4j_session)
+        st.write(f"Director with most unique actors: **{result[0]['director']}** ({result[0]['actor_count']} actors)")
+
+    elif query_choice == "Most connected movies (shared actors)":
+        result = most_connected_movies(neo4j_session)
+        st.table(pd.DataFrame(result))
+
+    elif query_choice == "Top 5 actors with most different directors":
+        result = top_5_actors_with_most_directors(neo4j_session)
+        st.table(pd.DataFrame(result))
+
+    elif query_choice == "Movie recommendation based on actor's past genres":
+        random_actor = get_random_actor(neo4j_session)  # Sélectionne un acteur aléatoire
+        result = recommend_movie_for_actor(neo4j_session, random_actor)
+
+        # Extraire les titres des films recommandés
+        movie_titles = [movie['recommended_movie'] for movie in result]
+        st.write(f"Recommended movies for {random_actor}:", ", ".join(movie_titles))
+
+    elif query_choice == "Director influence network based on genre similarities":
+        result = create_influence_relationship(neo4j_session)
+        st.write("Director influence relationships have been created.")
+
+    elif query_choice == "Shortest path between two actors":
+        result = shortest_path_between_actors(neo4j_session, "Tom Hanks", "Scarlett Johansson")
+        # Prendre le premier chemin s'il y en a plusieurs
+        first_path = result[0]["path"]  
+
+        # Filtrer les valeurs NULL (relations) et ne garder que les noms des acteurs
+        cleaned_path = [node for node in first_path if node is not None]
+
+        # Afficher sous forme de flèche
+        st.write(f"Shortest path: {' → '.join(cleaned_path)}")
+
+    elif query_choice == "Actor community detection (Louvain algorithm)":
+        result = detect_actor_communities(neo4j_session)
+
+        # Afficher sous forme de tableau avec Streamlit
+        st.write("### Actor Community Detection (Louvain Algorithm)")
+        st.table([{"Actor": record["actor"], "Community ID": record["communityId"]} for record in result])
+        
+    elif query_choice == "Movies with common genres but different directors":
+        result = get_movies_with_common_genres_but_different_directors(neo4j_session)
+        formatted_result = [{"Film 1": record["Film1"], 
+                        "Director 1": record["Director1"], 
+                        "Film 2": record["Film2"], 
+                        "Director 2": record["Director2"], 
+                        "Genre": record["Genre"]} for record in result]
+        st.write("Movies with Common Genres but Different Directors")
+        st.table(formatted_result)
+        
+    elif query_choice == "Movie recommendations based on actor's preferences":
+        random_actor = get_random_actor(neo4j_session)  # Sélectionne un acteur aléatoire
+        result = recommend_movies_based_on_actor(neo4j_session, random_actor)
+        formatted_result = [{"Recommended_Film": record["Recommended_Film"], 
+             "Genre": record["Genre"], 
+             "Actor": record["Actor"]} for record in result]
+        st.write(f"Recommended Movies for Actor: {random_actor}")
+        st.table(formatted_result)
+
+    elif query_choice == "Director competition based on films released in the same year":
+        result = create_director_competition(neo4j_session)
+        st.write(result)
+
+    elif query_choice == "Frequent collaborations between directors and actors, and their success":
+        result = collaborations_frequentes(neo4j_session)
+        formatted_result = [{"Acteur": record["Acteur"],
+                            "Realisateur": record["Realisateur"], 
+                            "Films": record["Films"], 
+                            "MoyenneRevenu": record["MoyenneRevenu"], 
+                            "MoyenneMetascore": record["MoyenneMetascore"]} 
+                            for record in result]
+        analyse=analyse_collaboration(formatted_result)
+        st.write("Frequent Collaborations Between Directors and Actors and Their Success")
+        st.table(analyse)
+
 
 
 if __name__ == "__main__":

@@ -25,6 +25,12 @@ services:
     restart: always
     environment:
       NEO4J_AUTH: neo4j/password
+      NEO4JLABS_PLUGINS: '["apoc", "graph-data-science"]'  # Active GDS
+      NEO4J_dbms_security_procedures_unrestricted: gds.*,apoc.*
+      NEO4J_dbms_security_procedures_allowlist: gds.*,apoc.*
+      NEO4J_dbms_memory_heap_initial__size: 512m
+      NEO4J_dbms_memory_heap_max__size: 1G
+      NEO4J_dbms_memory_pagecache_size: 512m
     networks:
       - my_network
     ports:
@@ -32,6 +38,10 @@ services:
       - "7687:7687"
     volumes:
       - ./app:/var/lib/neo4j/import  # Monter le répertoire app dans le répertoire d'importation de Neo4j
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/var/lib/neo4j/import
+      - neo4j_plugins:/plugins
     healthcheck:
       test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "password", "MATCH (n) RETURN count(n);"]
       interval: 10s
@@ -72,3 +82,7 @@ networks:
 
 volumes:
   mongo_data:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
+  neo4j_plugins:
